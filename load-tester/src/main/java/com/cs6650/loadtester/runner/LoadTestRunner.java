@@ -7,9 +7,14 @@ import com.cs6650.loadtester.generator.WorkloadGenerator;
 import com.cs6650.loadtester.metrics.MetricsCollector;
 import com.cs6650.loadtester.metrics.StaleReadTracker;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class LoadTestRunner {
   private final KvHttpClient client = new KvHttpClient();
+  // Using 50 concurrent threads to simulate high load and force overlaps
+  private final int NUM_THREADS = 50;
 
   public void run(
       String writeUrl,
@@ -17,29 +22,52 @@ public class LoadTestRunner {
       int totalRequests,
       WorkloadGenerator generator,
       MetricsCollector metrics,
-      StaleReadTracker staleTracker) {
+      StaleReadTracker staleTracker) throws InterruptedException {
+
+    ExecutorService threadPool = Executors.newFixedThreadPool(NUM_THREADS);
+    CountDownLatch latch = new CountDownLatch(totalRequests);
 
     for (int i = 0; i < totalRequests; i++) {
-      String key = generator.nextKey();
+      final int requestId = i;
 
-      if (generator.isWrite()) {
-        long start = System.currentTimeMillis();
-        PutResponse response = client.put(writeUrl, key, generator.nextValue());
-        long end = System.currentTimeMillis();
+      threadPool.submit(() -> {
+        try {
+          String key = generator.nextKey();
+          long requestStartTime = System.currentTimeMillis();
+          
+          // Record the time interval between accesses to this specific key (Required for PDF graphs)
+          metrics.recordKeyAccessInterval(key, requestStartTime);
 
-        metrics.recordWriteLatency(end - start);
-        staleTracker.recordWrite(key, response.getVersion());
-      } else {
-        String readUrl = readUrls.get(i % readUrls.size());
-        long start = System.currentTimeMillis();
-        GetResponse response = client.get(readUrl, key);
-        long end = System.currentTimeMillis();
+          if (generator.isWrite()) {
+            PutResponse response = client.put(writeUrl, key, generator.nextValue());
+            long end = System.currentTimeMillis();
 
-        metrics.recordReadLatency(end - start);
-        if (response != null) {
-          staleTracker.recordRead(key, response.getVersion());
+            metrics.recordWriteLatency(end - requestStartTime);
+            if (response != null) {
+              staleTracker.recordWrite(key, response.getVersion());
+            }
+          } else {
+            // Round-robin load balancing for reads
+            String readUrl = readUrls.get(requestId % readUrls.size());
+            GetResponse response = client.get(readUrl, key);
+            long end = System.currentTimeMillis();
+
+            metrics.recordReadLatency(end - requestStartTime);
+            if (response != null) {
+              staleTracker.recordRead(key, response.getVersion());
+            }
+          }
+        } catch (Exception e) {
+          System.err.println("Request failed: " + e.getMessage());
+        } finally {
+          // Ensure latch counts down even if the request throws an exception
+          latch.countDown();
         }
-      }
+      });
     }
+
+    // Main thread blocks here until all concurrent requests finish
+    latch.await();
+    threadPool.shutdown();
   }
 }

@@ -18,15 +18,16 @@ public class LeaderFollowerReplicationCoordinator {
     int success = currentSuccessCount;
     List<String> followers = config.getFollowerUrls();
 
+    // Iterate through ALL followers to prevent permanent data loss on slower nodes.
+    // Do not break early even if quorum is reached.
     for (String followerUrl : followers) {
       boolean ok = internalNodeClient.replicatePut(followerUrl, request);
       if (ok) {
         success++;
       }
-      if (success >= config.getWriteQuorumSize()) {
-        break;
-      }
     }
+    
+    // Return total success count to the service layer for quorum validation
     return success;
   }
 }

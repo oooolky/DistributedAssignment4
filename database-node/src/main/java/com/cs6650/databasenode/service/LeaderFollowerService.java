@@ -55,13 +55,15 @@ public class LeaderFollowerService {
 
     int success = 0;
 
-    // leader local write
-    SleepUtil.sleepMillis(200);
-    kvStore.put(request.getKey(), new VersionedValue(request.getValue(), newVersion));
-    success++;
-
+    // 1. Replicate to followers FIRST (sequentially as required by the assignment)
     success = replicationCoordinator.replicateToFollowers(nodeConfig, replicationRequest, success);
 
+    // 2. Leader local write and delay AFTER sending to followers
+    SleepUtil.sleepMillis(200);
+    kvStore.put(request.getKey(), new VersionedValue(request.getValue(), newVersion));
+    success++; // Add the leader's own successful local write
+
+    // 3. Verify if the write quorum is satisfied
     if (success < nodeConfig.getWriteQuorumSize()) {
       throw new RuntimeException("Write quorum not reached");
     }

@@ -20,10 +20,35 @@
       <version>1.0-SNAPSHOT</version>
     </dependency>
 
+    <!-- RestTemplate for HTTP calls to KV nodes -->
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-web</artifactId>
       <version>6.1.14</version>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <!--
+        Repackages the JAR into an executable fat JAR that embeds all dependencies.
+        Run with: java -jar load-tester/target/load-tester-1.0-SNAPSHOT.jar [args]
+      -->
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <version>${spring.boot.version}</version>
+        <configuration>
+          <mainClass>com.cs6650.loadtester.Main</mainClass>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>repackage</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>

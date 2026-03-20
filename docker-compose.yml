@@ -1,0 +1,74 @@
+# Leader-Follower: W=5, R=1 (strong write consistency)
+#
+# Start:  docker compose up -d
+# Stop:   docker compose down
+#
+# Build the image first (from the project root):
+#   docker build -t cs6650/database-node:latest .
+#
+# Unit tests against this cluster:
+#   mvn test -pl database-node -Dgroups="w5-setup"
+
+services:
+
+  leader:
+    image: cs6650/database-node:latest
+    environment:
+      MODE: "leader-follower"
+      ROLE: "leader"
+      NODE_ID: "leader"
+      WRITE_QUORUM_SIZE: "5"
+      READ_QUORUM_SIZE: "1"
+      FOLLOWER_URLS: "http://follower1:8080,http://follower2:8080,http://follower3:8080,http://follower4:8080"
+    ports:
+      - "8080:8080"
+    networks:
+      - kv-net
+
+  follower1:
+    image: cs6650/database-node:latest
+    environment:
+      MODE: "leader-follower"
+      ROLE: "follower"
+      NODE_ID: "follower-1"
+    ports:
+      - "8081:8080"
+    networks:
+      - kv-net
+
+  follower2:
+    image: cs6650/database-node:latest
+    environment:
+      MODE: "leader-follower"
+      ROLE: "follower"
+      NODE_ID: "follower-2"
+    ports:
+      - "8082:8080"
+    networks:
+      - kv-net
+
+  follower3:
+    image: cs6650/database-node:latest
+    environment:
+      MODE: "leader-follower"
+      ROLE: "follower"
+      NODE_ID: "follower-3"
+    ports:
+      - "8083:8080"
+    networks:
+      - kv-net
+
+  follower4:
+    image: cs6650/database-node:latest
+    environment:
+      MODE: "leader-follower"
+      ROLE: "follower"
+      NODE_ID: "follower-4"
+    ports:
+      - "8084:8080"
+    networks:
+      - kv-net
+
+networks:
+  kv-net:
+    driver: bridge

@@ -1,5 +1,8 @@
 https://gemini.google.com/share/da85714b2e0a
 
+## CS6650 Assignment 4 Report
+https://docs.google.com/document/d/1AR6HFxyPiv-obOdjiWJVDkRo794sbfMJ6fu36DqUFK0/edit?usp=sharing
+
 ## 2026.03.19更新
 
 ### feat: add docker, terraform, and consistency test support

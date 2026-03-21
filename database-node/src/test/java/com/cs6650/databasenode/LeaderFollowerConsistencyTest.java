@@ -128,15 +128,15 @@ class LeaderFollowerConsistencyTest {
      * <p>Per the assignment specification:
      * <ol>
      *   <li>Configure W=1, R=1.</li>
-     *   <li>Send PUT to the Leader.</li>
+     *   <li>Send PUT to the Leader and wait for acknowledgement.</li>
      *   <li>Immediately (within 5 × 200 ms = 1 s) send {@code local_read} to Followers.</li>
      *   <li>Some Followers should return stale data (or 404 for the first write to that key).</li>
      * </ol>
      *
-     * <p>With W=1, the Leader writes locally (~200 ms) and responds without waiting for
-     * any Follower. All 4 Followers receive the update asynchronously in the background,
-     * each taking another ~200 ms. Reading a Follower immediately after the Leader
-     * responds will therefore frequently return stale or missing data.
+     * <p>With W=1, the Leader writes locally (~200 ms) and responds without waiting
+     * for any Follower. All 4 Followers receive the update asynchronously in the
+     * background, each taking another ~200 ms. Reading a Follower immediately after
+     * the Leader responds will therefore frequently return stale or missing data.
      *
      * <p>Requires: W=1/R=1 cluster:
      * <pre>
@@ -146,30 +146,26 @@ class LeaderFollowerConsistencyTest {
     @Test
     @Tag("w1-setup")
     @DisplayName("Test 3 – W=1/R=1: Follower local_read returns stale or missing data immediately after PUT")
-    void test3_writeWithW1R1_followerLocalReadIsStale() throws InterruptedException {
+    void test3_writeWithW1R1_followerLocalReadIsStale() {
         String key = "test3-" + System.nanoTime();
         String newValue = "w1-inconsistent-value";
 
-        // Fire the PUT on a background thread so we can query followers concurrently.
-        // With W=1 the Leader responds after ~200 ms (its own local write only).
-        final PutResponse[] putResult = new PutResponse[1];
-        Thread writeThread = new Thread(() -> putResult[0] = put(LEADER_URL, key, newValue));
-        writeThread.start();
+        // Step 1: send the PUT and block until the Leader acknowledges.
+        // W=1 means the Leader only writes locally (~200 ms) before responding —
+        // no Follower is contacted synchronously, so this returns quickly.
+        PutResponse putResponse = put(LEADER_URL, key, newValue);
+        assertNotNull(putResponse, "PUT to Leader must succeed");
 
-        // Wait for the write to complete — should finish well within 600 ms for W=1.
-        writeThread.join(600);
-        assertNotNull(putResult[0],
-                "PUT should have completed within 600 ms for W=1");
-
-        // Immediately query each follower's local store.
-        // Background replication to each follower takes ~200 ms; since we read right
-        // after the leader responded, at least some followers should still be stale.
+        // Step 2: immediately query each Follower's local store.
+        // Background replication to each Follower takes ~200 ms per node.
+        // Because we read right after the Leader responded, at least some Followers
+        // will not have received the update yet and will return 404 (null here).
         int staleOrMissingCount = 0;
         for (String followerUrl : FOLLOWER_URLS) {
             GetResponse followerRead = localRead(followerUrl, key);
-            // null = key not yet present on this follower (404) — also a stale state.
+            // null means 404 — the key is not yet present on this Follower.
             boolean isStale = (followerRead == null)
-                    || (followerRead.getVersion() < putResult[0].getVersion());
+                    || (followerRead.getVersion() < putResponse.getVersion());
             if (isStale) {
                 staleOrMissingCount++;
             }
@@ -181,8 +177,8 @@ class LeaderFollowerConsistencyTest {
         assertTrue(staleOrMissingCount > 0,
                 "Expected at least one Follower to return stale or missing data immediately "
                 + "after a W=1/R=1 write. Verify the cluster is running with W=1/R=1. "
-                + "If the test still fails, the machine may be completing background "
-                + "replication before this check runs — re-run under higher write load.");
+                + "If this still fails, the machine completed background replication before "
+                + "the check ran — re-run the test.");
     }
 
     // -----------------------------------------------------------------------

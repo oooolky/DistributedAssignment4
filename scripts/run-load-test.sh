@@ -106,12 +106,12 @@ EOF
       "ec2-user@${LOAD_TESTER_IP}:~/run_${write_pct}pctWrites_*.csv" \
       "${RESULTS_DIR}/" 2>/dev/null || echo "(no CSVs found for this run)"
 
-  echo "✅ Run complete: W=${write_pct}%"
+  echo "Run complete: W=${write_pct}%"
 done
 
 echo ""
 echo "======================================================"
-echo "✅ All runs complete. Results in: ${RESULTS_DIR}/"
+echo "All runs complete. Results in: ${RESULTS_DIR}/"
 ls -la "${RESULTS_DIR}/"
 echo "======================================================"
 echo ""

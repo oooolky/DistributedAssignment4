@@ -144,7 +144,7 @@ docker run -d \
 echo "--- Container started ---"
 docker ps --filter name=kv-node
 EOF
-  echo "✅ $node_label deployed"
+  echo "$node_label deployed"
 }
 
 # ─── Deploy all 5 nodes ─────────────────────────────────────────────────────
@@ -181,7 +181,7 @@ esac
 
 echo ""
 echo "==================================================="
-echo "✅ Deployment complete for mode: $DEPLOY_MODE"
+echo "Deployment complete for mode: $DEPLOY_MODE"
 echo ""
 echo "Node 1 (Leader/Node1): http://${NODE1_PUBLIC_IP}:8080"
 echo "Node 2:                http://${NODE2_PUBLIC_IP}:8080"

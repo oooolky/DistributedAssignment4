@@ -48,5 +48,5 @@ docker tag "cs6650/database-node:latest" "${ECR_URL}:latest"
 docker push "${ECR_URL}:latest"
 
 echo ""
-echo "✅ Image pushed: ${ECR_URL}:latest"
+echo "Image pushed: ${ECR_URL}:latest"
 echo "You can now run: ./scripts/deploy.sh <mode> <ssh-key-path>"

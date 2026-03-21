@@ -26,14 +26,21 @@
       <artifactId>spring-web</artifactId>
       <version>6.1.14</version>
     </dependency>
+
+    <!--
+      Jackson is required for RestTemplate to serialize/deserialize JSON.
+      spring-web does not pull it in automatically — only spring-boot-starter-web does.
+      Without this, RestTemplate throws "No HttpMessageConverter for PutRequest".
+    -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>2.17.2</version>
+    </dependency>
   </dependencies>
 
   <build>
     <plugins>
-      <!--
-        Repackages the JAR into an executable fat JAR that embeds all dependencies.
-        Run with: java -jar load-tester/target/load-tester-1.0-SNAPSHOT.jar [args]
-      -->
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>

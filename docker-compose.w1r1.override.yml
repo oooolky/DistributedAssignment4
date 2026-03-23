@@ -1,0 +1,21 @@
+# Override: Leader-Follower W=1, R=1 (expose inconsistency window)
+#
+# Start with:
+#   docker compose -f docker-compose.yml -f docker-compose.w1r1.override.yml up -d
+#
+# W=1: Leader writes locally and responds immediately (~200 ms).
+#      All 4 followers receive the update asynchronously in the background.
+# R=1: Reads go directly to whatever node received the request — no quorum.
+#
+# This configuration deliberately creates an inconsistency window:
+# immediately after the Leader acknowledges a write, Followers may still
+# return stale data or 404 on local_read.
+#
+# Unit test against this cluster:
+#   mvn test -pl database-node -Dgroups="w1-setup"
+
+services:
+  leader:
+    environment:
+      WRITE_QUORUM_SIZE: "1"
+      READ_QUORUM_SIZE: "1"

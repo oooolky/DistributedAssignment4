@@ -37,16 +37,18 @@ public class LeaderlessService {
     VersionedValue current = kvStore.get(request.getKey());
     int newVersion = versionService.nextVersion(current);
 
-    SleepUtil.sleepMillis(200);
-    kvStore.put(request.getKey(), new VersionedValue(request.getValue(), newVersion));
-
     ReplicationPutRequest replicationRequest =
         new ReplicationPutRequest(request.getKey(), request.getValue(), newVersion);
 
+    // 1. Replicate to all peers first and wait for completion
     boolean ok = replicationCoordinator.replicateToAllPeers(nodeConfig, replicationRequest);
     if (!ok) {
       throw new RuntimeException("Failed to replicate to all peers");
     }
+
+    // 2. Write Coordinator local write and delay AFTER sending to peers
+    SleepUtil.sleepMillis(200);
+    kvStore.put(request.getKey(), new VersionedValue(request.getValue(), newVersion));
 
     return new PutResponse(request.getKey(), newVersion);
   }

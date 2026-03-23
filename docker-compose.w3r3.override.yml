@@ -1,0 +1,14 @@
+# Override: W=3, R=3 (balanced quorum — W + R > N = 5)
+#
+# Start with:
+#   docker compose -f docker-compose.yml -f docker-compose.w3r3.override.yml up -d
+#
+# W=3: Leader replicates to 2 followers synchronously, writes locally (=3 total),
+#      then responds. The remaining 2 followers receive the update asynchronously.
+# R=3: A read collects values from 3 nodes and returns the highest version.
+
+services:
+  leader:
+    environment:
+      WRITE_QUORUM_SIZE: "3"
+      READ_QUORUM_SIZE: "3"

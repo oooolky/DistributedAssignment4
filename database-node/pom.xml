@@ -20,17 +20,46 @@
       <version>${project.version}</version>
     </dependency>
 
+    <!--
+      spring-boot-starter-web provides RestController, ResponseEntity, RestTemplate,
+      embedded Tomcat, and Jackson. Do NOT re-declare spring-web at a narrower scope;
+      an explicit test-scope entry would hide these classes from the main source tree.
+    -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+
+    <!-- JUnit 5 + Mockito + Spring test utilities for integration tests -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 
   <build>
     <plugins>
+      <!--
+        The parent pom uses spring-boot-dependencies via dependencyManagement import,
+        NOT spring-boot-starter-parent. That means the plugin version and the repackage
+        goal are NOT automatically wired — they must be declared explicitly here.
+
+        Without the repackage execution bound to the package phase, mvn package would
+        produce a plain JAR (no embedded Tomcat / dependencies), and java -jar would
+        fail with "no main manifest attribute".
+      -->
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
+        <version>${spring.boot.version}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>repackage</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

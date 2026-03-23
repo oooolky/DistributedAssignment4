@@ -1,0 +1,16 @@
+# Override: W=1, R=5 (fast writes, strong read consistency)
+#
+# Start with:
+#   docker compose -f docker-compose.yml -f docker-compose.w1r5.override.yml up -d
+#
+# W=1: Leader writes locally and responds immediately; followers updated in background.
+# R=5: A read collects values from all 5 nodes and returns the highest version.
+#
+# Unit tests against this cluster:
+#   mvn test -pl database-node -Dgroups="w1-setup"
+
+services:
+  leader:
+    environment:
+      WRITE_QUORUM_SIZE: "1"
+      READ_QUORUM_SIZE: "5"

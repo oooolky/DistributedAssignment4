@@ -1,0 +1,76 @@
+# Leaderless: W=N (all 5 nodes), R=1
+#
+# Any node can accept reads and writes. The node receiving a write becomes the
+# Write Coordinator and propagates to all peers before responding.
+#
+# Start:  docker compose -f docker-compose.leaderless.yml up -d
+# Stop:   docker compose -f docker-compose.leaderless.yml down
+#
+# Unit tests against this cluster:
+#   mvn test -pl database-node -Dgroups="leaderless"
+
+services:
+
+  node1:
+    image: cs6650/database-node:latest
+    environment:
+      MODE: "leaderless"
+      ROLE: "leaderless"
+      NODE_ID: "node-1"
+      PEER_URLS: "http://node2:8080,http://node3:8080,http://node4:8080,http://node5:8080"
+    ports:
+      - "8080:8080"
+    networks:
+      - kv-net
+
+  node2:
+    image: cs6650/database-node:latest
+    environment:
+      MODE: "leaderless"
+      ROLE: "leaderless"
+      NODE_ID: "node-2"
+      PEER_URLS: "http://node1:8080,http://node3:8080,http://node4:8080,http://node5:8080"
+    ports:
+      - "8081:8080"
+    networks:
+      - kv-net
+
+  node3:
+    image: cs6650/database-node:latest
+    environment:
+      MODE: "leaderless"
+      ROLE: "leaderless"
+      NODE_ID: "node-3"
+      PEER_URLS: "http://node1:8080,http://node2:8080,http://node4:8080,http://node5:8080"
+    ports:
+      - "8082:8080"
+    networks:
+      - kv-net
+
+  node4:
+    image: cs6650/database-node:latest
+    environment:
+      MODE: "leaderless"
+      ROLE: "leaderless"
+      NODE_ID: "node-4"
+      PEER_URLS: "http://node1:8080,http://node2:8080,http://node3:8080,http://node5:8080"
+    ports:
+      - "8083:8080"
+    networks:
+      - kv-net
+
+  node5:
+    image: cs6650/database-node:latest
+    environment:
+      MODE: "leaderless"
+      ROLE: "leaderless"
+      NODE_ID: "node-5"
+      PEER_URLS: "http://node1:8080,http://node2:8080,http://node3:8080,http://node4:8080"
+    ports:
+      - "8084:8080"
+    networks:
+      - kv-net
+
+networks:
+  kv-net:
+    driver: bridge
